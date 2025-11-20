@@ -70,13 +70,13 @@ export const setupSocketIO = (server) => {
   // Define the allowed frontend origins to fix the CORS errors you reported.
   const allowedOrigins = [
     // 1. Your currently reported active Vercel frontend URL
-    "https://client-5b0dorv8j-kim254kes-projects.vercel.app", 
+    "https://client-8q8n30cor-kim254kes-projects.vercel.app", 
     
     // 2. The older client URL that was in your code (as a fallback)
-    "https://client-ol8mqahul-kim254kes-projects.vercel.app", 
+    "https://client-8q8n30cor-kim254kes-projects.vercel.app", 
     
     // 3. The Render client URL from your previous error logs
-    "https://client-s58d.onrender.com", 
+    "https://client-8q8n30cor-kim254kes-projects.vercel.app", 
     
     // 4. Local development ports
     "http://localhost:3000",
