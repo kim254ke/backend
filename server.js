@@ -25,7 +25,7 @@ setupSocketIO(httpServer);
 
 // Middleware
 app.use(cors({
-  origin: 'https://client-s58d.onrender.com/',
+  origin: 'https://client-s58d.onrender.com',
     credentials: true
 }));
 app.use(express.json());
