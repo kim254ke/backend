@@ -14,38 +14,61 @@ import stylistRoutes from "./routes/stylistRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
+// Load environment variables from .env file
 dotenv.config();
-connectDB();
 
-const app = express();
-const httpServer = createServer(app);
+// --- Connect to Database ---
+// We wrap this in an async function to use await properly
+const startServer = async () => {
+  try {
+    await connectDB();
+    console.log("✅ Database connected successfully!");
+  } catch (error) {
+    console.error("❌ Database connection failed:", error.message);
+    // Exit process with failure if DB connection fails
+    process.exit(1);
+  }
 
-// Setup Socket.IO
-setupSocketIO(httpServer);
+  const app = express();
+  const httpServer = createServer(app);
 
-// Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || "https://client-s58d.onrender.com/",
-  credentials: true
-}));
-app.use(express.json());
+  // Setup Socket.IO
+  setupSocketIO(httpServer);
 
-// Serve uploaded files
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+  // --- Middleware ---
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/services", serviceRoutes);
-app.use("/api/stylists", stylistRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/user", userRoutes);
+  // *** FIXED CORS CONFIGURATION ***
+  // This middleware allows your frontend to make requests to the backend.
+  // It's best practice to set the allowed origin using an environment variable.
+  app.use(cors({
+    // The `origin` option tells the browser which frontend URL is allowed to connect.
+    // Make sure you set `CLIENT_URL` in your Render Environment variables.
+    origin: process.env.CLIENT_URL || "https://client-nine-delta-55.vercel.app",
+    credentials: true // Allow cookies to be sent with requests
+  }));
 
-//tesr route
-app.get('/', (req, res) => {
-  res.send('API is running');
-});
+  app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => console.log(`🔥 Server running on port ${PORT}`));
+  // Serve uploaded files from the 'uploads' directory
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+  // --- API Routes ---
+  app.use("/api/auth", authRoutes);
+  app.use("/api/services", serviceRoutes);
+  app.use("/api/stylists", stylistRoutes);
+  app.use("/api/bookings", bookingRoutes);
+  app.use("/api/user", userRoutes);
+
+  // Test route to confirm the server is running
+  app.get('/', (req, res) => {
+    res.send('API is running...');
+  });
+
+  const PORT = process.env.PORT || 5000;
+  httpServer.listen(PORT, () => console.log(`🔥 Server running on port ${PORT}`));
+};
+
+// Start the server
+startServer();
