@@ -25,11 +25,10 @@ setupSocketIO(httpServer);
 
 // Middleware
 app.use(cors({
-  origin: 'https://client-s58d.onrender.com',
-    credentials: true
+  origin: process.env.CLIENT_URL || "https://client-s58d.onrender.com/",
+  credentials: true
 }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files
 const __filename = fileURLToPath(import.meta.url);

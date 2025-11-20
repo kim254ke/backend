@@ -67,7 +67,7 @@ const getAutomatedResponse = (message) => {
 export const setupSocketIO = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: "https://client-s58d.onrender.com",
+      origin: process.env.CLIENT_URL || "https://client-s58d.onrender.com/",
       methods: ["GET", "POST"],
       credentials: true
     }
