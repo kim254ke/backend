@@ -1,4 +1,5 @@
-// socketHandler.js - Add this to your backend
+// socketHandler.js (Backend)
+
 import { Server } from "socket.io";
 
 // Automated responses based on keywords
@@ -64,14 +65,35 @@ const getAutomatedResponse = (message) => {
   return "That's a great question! 🤔 Our team can give you more details. You can also browse our services page or book a consultation. What would you like to know more about?";
 };
 
+// --- FIX APPLIED HERE ---
 export const setupSocketIO = (server) => {
+  // Define the allowed frontend origins to fix the CORS errors you reported.
+  const allowedOrigins = [
+    // 1. Your currently reported active Vercel frontend URL
+    "https://client-5b0dorv8j-kim254kes-projects.vercel.app", 
+    
+    // 2. The older client URL that was in your code (as a fallback)
+    "https://client-ol8mqahul-kim254kes-projects.vercel.app", 
+    
+    // 3. The Render client URL from your previous error logs
+    "https://client-s58d.onrender.com", 
+    
+    // 4. Local development ports
+    "http://localhost:3000",
+    "http://localhost:5173", 
+    
+    // 5. If using an Environment Variable:
+    process.env.CLIENT_URL,
+  ].filter(url => url); // Removes any undefined/null entries
+
   const io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || "https://client-s58d.onrender.com/",
+      origin: allowedOrigins,
       methods: ["GET", "POST"],
       credentials: true
     }
   });
+// -------------------------
 
   io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);

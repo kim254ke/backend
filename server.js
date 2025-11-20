@@ -35,11 +35,27 @@ const startServer = async () => {
 
   // --- Middleware ---
 
-  // *** UPDATED CORS CONFIGURATION ***
+  // *** FIXED CORS CONFIGURATION ***
+  const allowedOrigins = [
+    // 1. Your currently reported active Vercel frontend URL
+    "https://client-5b0dorv8j-kim254kes-projects.vercel.app", 
+
+    // 2. The older client URL that was in your code (as a fallback)
+    "https://client-ol8mqahul-kim254kes-projects.vercel.app", 
+    
+    // 3. The Render client URL from your previous error logs
+    "https://client-s58d.onrender.com", 
+    
+    // 4. Local development ports
+    "http://localhost:3000",
+    "http://localhost:5173", 
+
+    // 5. If using an Environment Variable:
+    process.env.CLIENT_URL,
+  ].filter(url => url); // Filter out any undefined/null entries
+
   app.use(cors({
-    // Make sure you set `CLIENT_URL` in your Render Environment variables.
-    // The fallback is updated to your new frontend URL.
-    origin: process.env.CLIENT_URL || "https://client-ol8mqahul-kim254kes-projects.vercel.app",
+    origin: allowedOrigins,
     credentials: true
   }));
 
