@@ -25,8 +25,8 @@ setupSocketIO(httpServer);
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true
+  origin: 'https://frontend-0w3s.onrender.com',
+    credentials: true
 }));
 app.use(express.json());
 
@@ -41,6 +41,11 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/stylists", stylistRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/user", userRoutes);
+
+//tesr route
+app.get('/', (req, res) => {
+  res.send('API is running');
+});
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`🔥 Server running on port ${PORT}`));
