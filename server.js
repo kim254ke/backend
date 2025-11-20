@@ -18,14 +18,12 @@ import userRoutes from "./routes/userRoutes.js";
 dotenv.config();
 
 // --- Connect to Database ---
-// We wrap this in an async function to use await properly
 const startServer = async () => {
   try {
     await connectDB();
     console.log("✅ Database connected successfully!");
   } catch (error) {
     console.error("❌ Database connection failed:", error.message);
-    // Exit process with failure if DB connection fails
     process.exit(1);
   }
 
@@ -37,14 +35,12 @@ const startServer = async () => {
 
   // --- Middleware ---
 
-  // *** FIXED CORS CONFIGURATION ***
-  // This middleware allows your frontend to make requests to the backend.
-  // It's best practice to set the allowed origin using an environment variable.
+  // *** UPDATED CORS CONFIGURATION ***
   app.use(cors({
-    // The `origin` option tells the browser which frontend URL is allowed to connect.
     // Make sure you set `CLIENT_URL` in your Render Environment variables.
-    origin: process.env.CLIENT_URL || "https://client-nine-delta-55.vercel.app",
-    credentials: true // Allow cookies to be sent with requests
+    // The fallback is updated to your new frontend URL.
+    origin: process.env.CLIENT_URL || "https://client-ol8mqahul-kim254kes-projects.vercel.app",
+    credentials: true
   }));
 
   app.use(express.json());
@@ -61,7 +57,7 @@ const startServer = async () => {
   app.use("/api/bookings", bookingRoutes);
   app.use("/api/user", userRoutes);
 
-  // Test route to confirm the server is running
+  // Test route
   app.get('/', (req, res) => {
     res.send('API is running...');
   });
