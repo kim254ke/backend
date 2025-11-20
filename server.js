@@ -29,6 +29,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files
 const __filename = fileURLToPath(import.meta.url);
