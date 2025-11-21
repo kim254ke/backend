@@ -17,7 +17,7 @@ import userRoutes from "./routes/userRoutes.js";
 // Load environment variables from .env file
 dotenv.config();
 
-// --- Connect to Database ---
+// --- Connect to Database and Start Server ---
 const startServer = async () => {
   try {
     await connectDB();
@@ -35,26 +35,29 @@ const startServer = async () => {
 
   // --- Middleware ---
 
-  // *** CRITICAL CORS CONFIGURATION FIX ***
-  // These are the allowed origins for your frontend to make requests.
+  // CORS Configuration
   const allowedOrigins = [
-    // 1. **REQUIRED FIX:** Your new active Render frontend URL
-    "https://client-s58d.onrender.com", 
-    
-    // 2. Fallback for your previous Vercel deployment
-    "https://client-8q8n30cor-kim254kes-projects.vercel.app", 
-    
-    // 3. Local development ports (adjust as needed for your dev environment)
+    "https://client-s58d.onrender.com", // Your Render frontend
     "http://localhost:3000",
     "http://localhost:5173", 
-
-    // 4. Use environment variable for flexibility (good practice)
     process.env.CLIENT_URL,
-  ].filter(url => url); // Filters out any undefined or null entries
+  ].filter(Boolean); // Removes undefined/null entries
 
   app.use(cors({
-    origin: allowedOrigins,
-    credentials: true // Crucial for sending cookies/auth headers
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or Postman)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`⚠️ Blocked CORS request from origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   }));
 
   app.use(express.json());
@@ -71,14 +74,52 @@ const startServer = async () => {
   app.use("/api/bookings", bookingRoutes);
   app.use("/api/user", userRoutes);
 
-  // Test route
+  // Health check route
   app.get('/', (req, res) => {
-    res.send('API is running...');
+    res.json({ 
+      message: 'BeautyBook API is running! 💅✨',
+      status: 'active',
+      endpoints: {
+        services: '/api/services',
+        stylists: '/api/stylists',
+        bookings: '/api/bookings',
+        auth: '/api/auth',
+        user: '/api/user'
+      }
+    });
+  });
+
+  // 404 handler for undefined routes
+  app.use((req, res) => {
+    res.status(404).json({ 
+      error: 'Route not found',
+      path: req.path,
+      method: req.method
+    });
+  });
+
+  // Global error handler
+  app.use((err, req, res, next) => {
+    console.error('❌ Server Error:', err);
+    res.status(err.status || 500).json({
+      error: err.message || 'Internal server error',
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
   });
 
   const PORT = process.env.PORT || 5000;
-  httpServer.listen(PORT, () => console.log(`🔥 Server running on port ${PORT}`));
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`🔥 Server running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 Allowed origins: ${allowedOrigins.join(', ')}`);
+  });
 };
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('❌ Unhandled Promise Rejection:', err);
+  process.exit(1);
+});
 
 // Start the server
 startServer();
