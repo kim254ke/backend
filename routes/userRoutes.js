@@ -43,8 +43,8 @@ const upload = multer({
   }
 });
 
-// Upload avatar - IMPORTANT: This route MUST be /user/avatar/:userId to match frontend
-router.put("/user/avatar/:userId", upload.single("avatar"), async (req, res) => {
+// Upload avatar - Route: /api/user/avatar/:userId (NO /user/ prefix here!)
+router.put("/avatar/:userId", upload.single("avatar"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -53,16 +53,20 @@ router.put("/user/avatar/:userId", upload.single("avatar"), async (req, res) => 
     const userId = req.params.userId;
 
     // Delete old avatar file if exists
-    const user = await User.findById(userId);
-    if (user && user.avatar && !user.avatar.startsWith('http')) {
-      const oldAvatarPath = path.join(__dirname, "..", user.avatar);
-      if (fs.existsSync(oldAvatarPath)) {
-        fs.unlinkSync(oldAvatarPath);
+    try {
+      const user = await User.findById(userId);
+      if (user && user.avatar && !user.avatar.startsWith('http')) {
+        const filename = user.avatar.split('/').pop();
+        const oldAvatarPath = path.join(__dirname, "..", "uploads", "avatars", filename);
+        if (fs.existsSync(oldAvatarPath)) {
+          fs.unlinkSync(oldAvatarPath);
+        }
       }
+    } catch (cleanupError) {
+      console.log("Could not cleanup old avatar:", cleanupError.message);
     }
 
     // Store relative path in database (not full URL)
-    // This makes it environment-agnostic
     const avatarPath = `/uploads/avatars/${req.file.filename}`;
 
     // Update user in database
@@ -90,8 +94,8 @@ router.put("/user/avatar/:userId", upload.single("avatar"), async (req, res) => 
   }
 });
 
-// Update user profile - IMPORTANT: This route MUST be /user/profile/:userId to match frontend
-router.put("/user/profile/:userId", async (req, res) => {
+// Update user profile - Route: /api/user/profile/:userId (NO /user/ prefix here!)
+router.put("/profile/:userId", async (req, res) => {
   try {
     const { name, phone, location } = req.body;
     const userId = req.params.userId;
@@ -126,8 +130,8 @@ router.put("/user/profile/:userId", async (req, res) => {
   }
 });
 
-// Get user profile
-router.get("/user/profile/:userId", async (req, res) => {
+// Get user profile - Route: /api/user/profile/:userId
+router.get("/profile/:userId", async (req, res) => {
   try {
     const user = await User.findById(req.params.userId).select('-password');
     
