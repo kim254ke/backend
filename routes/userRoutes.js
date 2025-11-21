@@ -3,6 +3,7 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import User from "../models/User.js"; // Adjust path to your User model
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -42,53 +43,105 @@ const upload = multer({
   }
 });
 
-// Upload avatar
-router.put("/avatar/:userId", upload.single("avatar"), async (req, res) => {
+// Upload avatar - IMPORTANT: This route MUST be /user/avatar/:userId to match frontend
+router.put("/user/avatar/:userId", upload.single("avatar"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Construct the avatar URL
-    const avatarUrl = `${req.protocol}://${req.get("host")}/uploads/avatars/${req.file.filename}`;
+    const userId = req.params.userId;
 
-    // Here you would update the user in your database
-    // Example: await User.findByIdAndUpdate(req.params.userId, { avatar: avatarUrl });
+    // Delete old avatar file if exists
+    const user = await User.findById(userId);
+    if (user && user.avatar && !user.avatar.startsWith('http')) {
+      const oldAvatarPath = path.join(__dirname, "..", user.avatar);
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    // Store relative path in database (not full URL)
+    // This makes it environment-agnostic
+    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+
+    // Update user in database
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { avatar: avatarPath },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     res.json({ 
       message: "Avatar uploaded successfully",
-      avatar: avatarUrl 
+      avatar: avatarPath,
+      user: updatedUser
     });
   } catch (error) {
     console.error("Avatar upload error:", error);
-    res.status(500).json({ message: "Failed to upload avatar" });
+    res.status(500).json({ 
+      message: "Failed to upload avatar",
+      error: error.message 
+    });
   }
 });
 
-// Update user profile
-router.put("/profile/:userId", async (req, res) => {
+// Update user profile - IMPORTANT: This route MUST be /user/profile/:userId to match frontend
+router.put("/user/profile/:userId", async (req, res) => {
   try {
     const { name, phone, location } = req.body;
+    const userId = req.params.userId;
 
-    // Here you would update the user in your database
-    // Example: 
-    // const user = await User.findByIdAndUpdate(
-    //   req.params.userId,
-    //   { name, phone, location },
-    //   { new: true }
-    // );
+    // Validate input
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Name is required" });
+    }
 
-    // For now, return the updated data
-    res.json({
-      _id: req.params.userId,
-      name,
-      phone,
-      location,
-      message: "Profile updated successfully"
-    });
+    // Update user in database
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { 
+        name: name.trim(), 
+        phone: phone?.trim() || "", 
+        location: location?.trim() || "" 
+      },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(updatedUser);
   } catch (error) {
     console.error("Profile update error:", error);
-    res.status(500).json({ message: "Failed to update profile" });
+    res.status(500).json({ 
+      message: "Failed to update profile",
+      error: error.message 
+    });
+  }
+});
+
+// Get user profile
+router.get("/user/profile/:userId", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("Get profile error:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch profile",
+      error: error.message 
+    });
   }
 });
 
